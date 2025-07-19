@@ -7,7 +7,7 @@ load_dotenv()
 REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN")
 
 # Model version ID for ThinkSound
-MODEL_VERSION = "3ac27883b40c1fe7179c5fdff9dfda39d53f6e4c43a8f7006c0dbf1e5f2a75a3"
+MODEL_VERSION = "fbe6f7b94b814be289b132d2bfa9b584d75545b6e0e66c56985a5ddc93026444"
 REPLICATE_API_URL = "https://api.replicate.com/v1/predictions"
 
 headers = {
