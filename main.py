@@ -5,7 +5,7 @@ import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 
 from fetchers.youtube_fetcher import fetch_youtube_videos
-from summarizer import summarize_text
+from summarizer.summarize import summarize_text
 from database.supabase_client import insert_summary
 
 app = FastAPI()
