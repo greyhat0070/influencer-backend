@@ -1,13 +1,17 @@
 import os
-from supabase import create_client
+from supabase import create_client, Client
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv()  # Only needed for local development
 
-url = os.getenv("https://heamfsqjsxzfkvjxhakz.supabase.co")
-key = os.getenv("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhlYW1mc3Fqc3h6Zmt2anhoYWt6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MDUxMDgsImV4cCI6MjA2ODQ4MTEwOH0.drhdPR5WlYVV1Sye6_NxLjPutbToQgIOyn4gWgXc0bA")
+# ✅ Correct way: get by variable name, NOT value
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-supabase = create_client(url, key)
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise ValueError("❌ Missing SUPABASE_URL or SUPABASE_KEY in environment variables")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 async def insert_summary(platform, handle, content, summary):
     data = {
