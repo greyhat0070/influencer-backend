@@ -8,7 +8,9 @@ from fetchers.youtube_fetcher import fetch_youtube_videos
 from database.supabase_client import insert_summary
 
 app = FastAPI()
-
+@app.get("/")
+def root():
+    return {"status": "Influencer Monitoring Agent is running"}
 # Enable CORS for frontend requests
 app.add_middleware(
     CORSMiddleware,
