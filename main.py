@@ -8,9 +8,7 @@ from fetchers.youtube_fetcher import fetch_youtube_videos
 from database.supabase_client import insert_summary
 
 app = FastAPI()
-@app.get("/")
-def root():
-    return {"status": "Influencer Monitoring Agent is running"}
+
 # Enable CORS for frontend requests
 app.add_middleware(
     CORSMiddleware,
@@ -22,16 +20,23 @@ app.add_middleware(
 
 # Pydantic model for POST /summarize/
 class SummarizeRequest(BaseModel):
-    text: str
+    platform: str
+    handle:str
 
-# Route: POST /summarize/
 @app.post("/summarize/")
-async def summarize_endpoint(data: SummarizeRequest):
-    try:
-        summary = await summarize_text(data.text)
-        return {"summary": summary}
-    except Exception as e:
-        return {"error": str(e)}
+async def summarize(request: SummarizeRequest):
+    platform = request.platform
+    handle = request.handle
+    # Replace with real summarization logic
+    return {"summary": f"Monitoring summary for {platform} handle: {handle}"}
+# Route: POST /summarize/
+# @app.post("/summarize/")
+# async def summarize_endpoint(data: SummarizeRequest):
+#     try:
+#         summary = await summarize_text(data.text)
+#         return {"summary": summary}
+#     except Exception as e:
+#         return {"error": str(e)}
 
 # Route: GET /fetch/youtube?handle=nasdaily
 @app.get("/fetch/youtube")
