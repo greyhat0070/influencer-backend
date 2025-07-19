@@ -1,70 +1,55 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
 import uvicorn
-from fastapi.middleware.cors import CORSMiddleware
-
-from fetchers.youtube_fetcher import fetch_youtube_videos
 from summarizer.summarize import summarize_text
+from fetchers.youtube_fetcher import fetch_youtube_videos
 from database.supabase_client import insert_summary
 
 app = FastAPI()
 
-# CORS setup
+# Enable CORS for frontend requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Restrict in production
+    allow_origins=["*"],  # Change this to your frontend domain in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.get("/")
-def root():
-    return {"status": "Influencer Monitoring Agent is running"}
-
-# Pydantic Models
+# Pydantic model for POST /summarize/
 class SummarizeRequest(BaseModel):
     text: str
 
-class SaveRequest(BaseModel):
-    platform: str
-    handle: str
-    content: str
-    summary: str
-
-# Fetch and summarize YouTube content
-@app.get("/fetch/youtube")
-async def fetch_youtube(handle: str):
-    videos = await fetch_youtube_videos(handle)
-    full_text = " ".join([v["title"] + " " + v["description"] for v in videos])
-    summary = await summarize_text(full_text)
-    await insert_summary(
-        platform="YouTube",
-        handle=handle,
-        content=full_text,
-        summary=summary
-    )
-    return {"summary": summary}
-
-# Summarize any input text
+# Route: POST /summarize/
 @app.post("/summarize/")
 async def summarize_endpoint(data: SummarizeRequest):
-    summary = await summarize_text(data.text)
-    return {"summary": summary}
+    try:
+        summary = await summarize_text(data.text)
+        return {"summary": summary}
+    except Exception as e:
+        return {"error": str(e)}
 
-# Save pre-summarized data manually
-@app.post("/save/")
-async def save_summary(data: SaveRequest):
-    await insert_summary(
-        platform=data.platform,
-        handle=data.handle,
-        content=data.content,
-        summary=data.summary
-    )
-    return {"status": "saved"}
+# Route: GET /fetch/youtube?handle=nasdaily
+@app.get("/fetch/youtube")
+async def fetch_youtube(handle: str):
+    try:
+        videos = await fetch_youtube_videos(handle)
+        full_text = " ".join([v["title"] + " " + v["description"] for v in videos])
+        summary = await summarize_text(full_text)
+        await insert_summary(
+            platform="YouTube",
+            handle=handle,
+            content=full_text,
+            summary=summary
+        )
+        return {"summary": summary}
+    except Exception as e:
+        return {"error": str(e)}
 
-# For Render/Fly.io
+
+# Required to run on Render or Fly.io
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port)
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
