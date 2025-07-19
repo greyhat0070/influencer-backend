@@ -4,41 +4,30 @@ import asyncio
 from dotenv import load_dotenv
 
 load_dotenv()
-REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN")
+HF_API_TOKEN = os.getenv("HF_API_TOKEN")
 
-# Model version ID for ThinkSound
-MODEL_VERSION = "fbe6f7b94b814be289b132d2bfa9b584d75545b6e0e66c56985a5ddc93026444"
-REPLICATE_API_URL = "https://api.replicate.com/v1/predictions"
+# Recommended: facebook/bart-large-cnn or google/pegasus-xsum
+MODEL = "facebook/bart-large-cnn"
+HF_API_URL = f"https://api-inference.huggingface.co/models/{MODEL}"
 
 headers = {
-    "Authorization": f"Token {REPLICATE_API_TOKEN}",
+    "Authorization": f"Bearer {HF_API_TOKEN}",
     "Content-Type": "application/json"
 }
 
 async def summarize_text(text: str) -> str:
-    payload = {
-        "version": MODEL_VERSION,
-        "input": {
-            "input": text
-        }
-    }
-
-    async with httpx.AsyncClient() as client:
-        # Step 1: Create the prediction job
-        response = await client.post(REPLICATE_API_URL, headers=headers, json=payload)
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        response = await client.post(
+            HF_API_URL,
+            headers=headers,
+            json={"inputs": text}
+        )
         response.raise_for_status()
-        prediction = response.json()
-        prediction_url = prediction["urls"]["get"]
 
-        # Step 2: Poll until status is 'succeeded'
-        while True:
-            poll_response = await client.get(prediction_url, headers=headers)
-            poll_response.raise_for_status()
-            result = poll_response.json()
+        result = response.json()
+        
+        # Handle possible queue state (Hugging Face sometimes queues on cold starts)
+        if isinstance(result, dict) and result.get("error"):
+            raise RuntimeError(f"Hugging Face API Error: {result['error']}")
 
-            if result["status"] == "succeeded":
-                return result["output"]
-            elif result["status"] == "failed":
-                raise RuntimeError("Summarization failed.")
-            
-            await asyncio.sleep(1)  # avoid hitting rate limits
+        return result[0]["summary_text"]
