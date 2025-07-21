@@ -6,3 +6,4 @@ supabase
 asyncio
 transformers
 torch
+instaloader
